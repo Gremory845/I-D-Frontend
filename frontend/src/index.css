@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -22,7 +23,7 @@
     rgba(0,0,0,0.4) 0 10px 15px -3px,
     rgba(0,0,0,0.2) 0 4px 6px -2px;
 
-  --sans: system-ui, "Segoe UI", Roboto, sans-serif;
+  --sans: "Google Sans Flex", sans-serif;
 }
 
 body {

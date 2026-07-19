@@ -5,14 +5,14 @@ function VisitCalendar({ date, setDate }) {
 
 
   function disableDates({date}){
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-    const today = new Date();
-
-    return (
-      date < today ||
-      date.getDay() === 0 ||
-      date.getDay() === 6
-    );
+      return (
+        date < today ||
+        date.getDay() === 0 ||
+        date.getDay() === 6
+      );
 
   }
 

@@ -1,0 +1,205 @@
+@import "tailwindcss";
+
+:root {
+   --text: #ddd6e8;
+  --text-h: #ffffff;
+
+  --bg: #160d24;
+
+  --border: #3b2850;
+
+  --code-bg: #241634;
+
+  --accent: #aa3bff;
+
+  --accent-bg: rgba(170, 59, 255, 0.15);
+
+  --accent-border: rgba(170, 59, 255, 0.6);
+
+  --social-bg: rgba(255,255,255,0.05);
+
+  --shadow:
+    rgba(0,0,0,0.4) 0 10px 15px -3px,
+    rgba(0,0,0,0.2) 0 4px 6px -2px;
+
+  --sans: system-ui, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  margin: 0;
+
+   background: var(--bg);
+
+  font-family: var(--sans);
+
+  color: var(--text);
+}
+
+h1,
+h2,
+h3 {
+  color: var(--text-h);
+}
+
+button {
+  transition: 0.2s;
+}
+
+.card {
+  background: var(--code-bg);
+
+  border: 1px solid var(--border);
+
+  border-radius: 18px;
+
+  box-shadow: var(--shadow);
+}
+
+.primary-btn {
+  background: var(--accent);
+
+  color: white;
+
+  border-radius: 12px;
+
+  padding: 0.75rem 1.2rem;
+
+  font-weight: 600;
+}
+
+.primary-btn:hover {
+  opacity: 0.9;
+
+  transform: translateY(-1px);
+}
+
+.secondary-btn {
+  background: var(--accent-bg);
+
+  color: var(--accent);
+
+  border: 1px solid var(--accent-border);
+
+  border-radius: 12px;
+
+  padding: 0.75rem 1.2rem;
+
+  font-weight: 600;
+}
+
+/* =========================
+   REACT CALENDAR
+========================= */
+
+
+.react-calendar {
+
+background: var(--code-bg);
+
+border:1px solid var(--border);
+
+border-radius:18px;
+
+padding:20px;
+
+color:var(--text);
+
+font-family:var(--sans);
+
+width:100%;
+
+}
+
+
+
+.react-calendar__navigation {
+
+display:flex;
+
+margin-bottom:25px;
+
+}
+
+
+
+.react-calendar__navigation button {
+
+background:transparent;
+
+color:var(--text-h);
+
+font-size:20px;
+
+font-weight: 500;
+
+}
+
+
+.react-calendar__month-view__weekdays {
+
+color:var(--accent);
+
+font-weight:bold;
+
+}
+
+
+.react-calendar__tile {
+
+background:transparent;
+
+color:var(--text);
+
+height:50px;
+
+border-radius:12px;
+
+}
+
+
+.react-calendar__tile:hover {
+
+background:var(--accent-bg);
+
+color:white;
+
+}
+
+
+.react-calendar__tile--now {
+
+background:var(--accent-bg);
+
+color:white;
+
+}
+
+
+
+.react-calendar__tile--active {
+
+background:var(--accent);
+
+color:white;
+
+}
+
+
+
+.react-calendar__tile:disabled {
+
+background:transparent;
+
+color:#625879;
+
+opacity:.5;
+
+}
+
+
+
+.react-calendar button {
+
+border:none;
+
+}

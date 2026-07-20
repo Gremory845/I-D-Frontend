@@ -28,13 +28,9 @@ function Login() {
         className="card w-full max-w-md p-10">
         <div
           className="text-center mb-8 ">
-          <div
-            className="w-16 h-18 rounded-2xl flex items-center justify-center mx-auto mb-8 text-4xl">
-            Casa Aurora
-          </div>
 
           <h1
-            className="text-3xl mb-4 font-bold">
+            className="text-3xl mb-4 font-light">
             Bienvenido
           </h1>
 

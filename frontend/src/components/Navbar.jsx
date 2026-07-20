@@ -19,7 +19,7 @@ function Navbar() {
 
   return (
     <header
-      className="border-b sticky top-0 z-20">
+      className="border-b sticky top-0 z-20 bg-purple-950">
 
       <div
         className="max-w-7xl mx-auto px-8 py-5 flex justify-between items-center">
@@ -27,7 +27,7 @@ function Navbar() {
         <div>
 
           <h1
-            className="text-2xl font-bold">
+            className="text-2xl font-light">
             Casa Aurora
           </h1>
 

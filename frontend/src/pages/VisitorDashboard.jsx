@@ -53,20 +53,60 @@ const TIME_SLOTS = [
   { start: "16:00", end: "16:30" },
   { start: "16:30", end: "17:00" },
 ];
+//para mantrener la zona horaria del país, se puede hacer igual con una biblioteca pero es lo mismo
+function formatLocalDate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+//obtiene la hora y fecha actual
+function isToday(date) {
+  const now = new Date();
+  return (
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate()
+  );
+}
 
 function getAvailableSlots(date) {
   const day = date.getDay();
 
-  if (day === 0 || day === 6) {
-    return [];
+  if (day === 0 || day === 6) return [];
+  //aquí filtramos las horas que ya hayan pasado, ejemplo si son las 3 pm que no deje elegir de las 3 pm hacía atrás
+  let slots = TIME_SLOTS;
+
+  if (isToday(date)) {
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+    slots = slots.filter((slot) => {
+      const [hours, minutes] = slot.start.split(":").map(Number);
+      const slotMinutes = hours * 60 + minutes;
+      return slotMinutes > currentMinutes;
+    });
   }
 
-  return TIME_SLOTS.map((slot) => ({
+  return slots.map((slot) => ({
     value: `${slot.start}-${slot.end}`,
     label: `${slot.start} - ${slot.end}`,
     start: slot.start,
     end: slot.end,
   }));
+}
+//verifica que los espacios estén llenos para enviar el form
+function getMissingFieldMessage(visitorName, residentId, selectedSlot) {
+  if (!visitorName.trim()) {
+    return "Ingresa el nombre del visitante para continuar";
+  }
+  if (!residentId) {
+    return "Selecciona un residente para continuar";
+  }
+  if (!selectedSlot) {
+    return "Selecciona un horario para continuar";
+  }
+  return null;
 }
 
 function VisitorDashboard() {
@@ -80,17 +120,34 @@ function VisitorDashboard() {
 
   const timeSlots = date ? getAvailableSlots(date) : [];
 
+  const [confirmation, setConfirmation] = useState(null);
+
+  const [touched, setTouched] = useState(false); //evita que lanze mensaje de espacio vacio antes que el usuario llene algo
+
+  const missingFieldMessage = getMissingFieldMessage(visitorName, residentId, selectedSlot);
+
+  const canSubmit = !missingFieldMessage;
+
   function submitAppointment() {
+    setTouched(true);
+    if (!canSubmit) return; // no continuar si falta algo
     const appointment = {
       visitor_name: visitorName,
-      resident_id: residentId,
-      visit_date: date?.toISOString().slice(0, 10),
+      resident_id: Number (residentId), //Modificación para futura conexión con back, mejor castear el dato antes de enviarlo para evitar bugs
+      visit_date: formatLocalDate(date), //se usa la función antes creada
       time_slot: selectedSlot,
     };
 
     console.log(appointment);
 
-    alert("Visita reservada correctamente.");
+    setConfirmation("Visita reservada correctamente.");
+
+    //Reseta el formulario luego de reservar la cita
+    setVisitorName("");
+    setResidentId("");
+    setSelectedSlot("");
+    setDate(null);
+
   }
 
   return (
@@ -179,14 +236,28 @@ function VisitorDashboard() {
                 ))}
               </select>
 
+                {touched && missingFieldMessage && (
+                  <p className="mt-4 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-400">
+                    {missingFieldMessage} 
+                  </p>
+                )}
+
               <button
                 onClick={submitAppointment}
+                disabled={touched && !canSubmit} //confirma que los campos vayan llenos antes de enviar el form
                 className="primary-btn">
                 Reservar visita
               </button>
 
-            </div>
+            </div>  
           )}
+          
+          {confirmation && (
+          <div className="mt-4 p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400">
+            {confirmation}
+          </div>
+          )}
+
         </div>
       </main>
     </>

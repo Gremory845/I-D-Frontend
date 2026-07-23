@@ -1,24 +1,35 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 function Login() {
-  const { user, login } = useAuth();
+  const { user, login, loading, error } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [formError, setFormError] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
     if (user) {
-      navigate(user.role === "staff" ? "/staff" : "/visitor", { replace: true });
+      navigate(user.role === "staff" || user.role === "admin" ? "/staff" : "/visitor", {
+        replace: true,
+      });
     }
   }, [navigate, user]);
 
-  function submit(role) {
-    login(role);
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setFormError("");
 
-    if (role === "visitor") {
-      navigate("/visitor");
-    } else {
-      navigate("/staff");
+    if (!email || !password) {
+      setFormError("Por favor ingresa correo y contraseña.");
+      return;
+    }
+
+    try {
+      await login(email, password);
+    } catch (loginError) {
+      setFormError(loginError.message);
     }
   }
 
@@ -30,25 +41,31 @@ function Login() {
           <p>Ingresa al sistema de citas para visitas</p>
         </div>
 
-        <input
-          className="w-full border rounded-xl p-4 mb-4 outline-none focus:border-purple-500"
-          placeholder="Correo electrónico"
-        />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full border rounded-xl p-4 outline-none focus:border-purple-500"
+            placeholder="Correo electrónico"
+          />
 
-        <input
-          className="w-full border rounded-xl p-4 outline-none focus:border-purple-500"
-          placeholder="Contraseña"
-        />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full border rounded-xl p-4 outline-none focus:border-purple-500"
+            placeholder="Contraseña"
+          />
 
-        <div className="space-y-3 mt-6">
-          <button onClick={() => submit("visitor")} className="primary-btn w-full">
-            Entrar como visitante
+          {(formError || error) && (
+            <p className="text-sm text-red-500">{formError || error}</p>
+          )}
+
+          <button type="submit" disabled={loading} className="primary-btn w-full">
+            {loading ? "Ingresando..." : "Entrar"}
           </button>
-
-          <button onClick={() => submit("staff")} className="secondary-btn w-full">
-            Entrar como encargado
-          </button>
-        </div>
+        </form>
       </div>
     </div>
   );

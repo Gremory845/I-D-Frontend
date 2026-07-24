@@ -4,14 +4,37 @@ import AppointmentCard from "../components/AppointmentCard";
 import AppointmentModal from "../components/AppointmentModal";
 import Loader from "../components/Loader";
 import { getAppointments, updateAppointmentStatus } from "../services/appointmentService";
+import VisitCalendar from "../components/Calendar";
+import { useAuth } from "../context/AuthContext";
 
 function StaffDashboard() {
+  const { user } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [reason, setReason] = useState("");
   const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [processing, setProcessing] = useState(null);
+
+  const filteredAppointments =
+    selectedDate
+      ?
+      appointments.filter(
+        item =>
+          item.date ===
+          selectedDate
+            .toISOString()
+            .split("T")[0]
+      )
+      :
+      appointments;
+
+      const canApprove =
+    user?.permissions?.includes(
+        "approve appointment"
+    );
 
   useEffect(() => {
     async function loadAppointments() {
@@ -21,11 +44,12 @@ function StaffDashboard() {
       try {
         const data = await getAppointments();
         setAppointments(data.map(formatAppointment));
+
       } catch (requestError) {
         setError(
           requestError.response?.data?.message ||
-            requestError.message ||
-            "No se pudo cargar la lista de citas."
+          requestError.message ||
+          "No se pudo cargar la lista de citas."
         );
       } finally {
         setLoading(false);
@@ -56,24 +80,47 @@ function StaffDashboard() {
     return `${normalize(start)} - ${normalize(end)}`;
   }
 
-  async function approve(id) {
-    setError(null);
+async function approve(id) {
 
-    try {
-      await updateAppointmentStatus(id, "approved");
-      setAppointments((prev) =>
-        prev.map((item) =>
-          item.id === id ? { ...item, status: "approved" } : item
-        )
-      );
-    } catch (requestError) {
-      setError(
-        requestError.response?.data?.message ||
-          requestError.message ||
-          "No se pudo aprobar la cita."
-      );
-    }
+  setError(null);
+  setProcessing(id);
+
+  try {
+
+    await updateAppointmentStatus(
+      id,
+      "approved"
+    );
+
+
+    setAppointments((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              status: "approved"
+            }
+          : item
+      )
+    );
+
+
+  } catch (requestError) {
+
+    setError(
+      requestError.response?.data?.message ||
+      requestError.message ||
+      "No se pudo aprobar la cita."
+    );
+
+
+  } finally {
+
+    setProcessing(null);
+
   }
+
+}
 
   function openRejectModal(id) {
     setSelectedAppointment(id);
@@ -100,8 +147,8 @@ function StaffDashboard() {
     } catch (requestError) {
       setError(
         requestError.response?.data?.message ||
-          requestError.message ||
-          "No se pudo rechazar la cita."
+        requestError.message ||
+        "No se pudo rechazar la cita."
       );
     }
   }
@@ -115,8 +162,14 @@ function StaffDashboard() {
           <h1 className="text-4xl font-bold">Agenda de visitas</h1>
           <p className="mt-2">Revisa y gestiona solicitudes pendientes</p>
         </div>
-
+        <div className="mb-5">
+          <VisitCalendar 
+          date={selectedDate}
+          setDate={setSelectedDate}
+          appointments={appointments}/></div>
+        
         {loading ? (
+
           <div className="card p-8">
             <Loader />
           </div>
@@ -127,18 +180,21 @@ function StaffDashboard() {
             <p>No hay citas registradas aún.</p>
           </div>
         ) : (
+
           <div className="grid md:grid-cols-2 gap-6">
-            {appointments.map((item) => (
+            {filteredAppointments.map((item) => (
               <AppointmentCard
                 key={item.id}
                 appointment={item}
-                canApprove={true}
+                canApprove={canApprove}
                 onApprove={() => approve(item.id)}
                 onReject={() => openRejectModal(item.id)}
+                processing={processing === item.id}
               />
             ))}
           </div>
         )}
+
       </main>
 
       {showModal && (

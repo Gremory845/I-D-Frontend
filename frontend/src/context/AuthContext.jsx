@@ -28,17 +28,33 @@ export function AuthProvider({ children }) {
   async function login(email, password) {
     setLoading(true);
     setError(null);
-
     try {
       const response = await loginRequest(email, password);
       const token = response.token || response.data?.token;
       const rawUser = response.data || response.user || response;
 
+      const role = getRoleFromUser(rawUser);
+
       const currentUser = {
         id: rawUser.id,
         name: rawUser.name,
         email: rawUser.email,
-        role: getRoleFromUser(rawUser),
+        role,
+        permissions:
+      role === "admin"
+        ?
+        [
+          "view-all-appointments",
+          "approve appointment"
+        ]
+        :
+        role === "staff"
+          ?
+          [
+            "view-all-appointments"
+          ]
+          :
+          [],
       };
 
       setUser(currentUser);

@@ -2,7 +2,8 @@ function AppointmentCard({
   appointment,
   canApprove,
   onApprove,
-  onReject
+  onReject,
+  processing,
 }) {
 
 
@@ -59,6 +60,15 @@ ${statusStyle[appointment.status]} `}>
     {appointment.time}
   </p>
 
+  {
+appointment.notes && (
+
+<p className="mt-3">
+<b>Notas:</b> {appointment.notes}
+</p>
+
+)
+}
 
   {
     appointment.status === "rejected" &&
@@ -106,16 +116,29 @@ ${statusStyle[appointment.status]} `}>
         <div className="flex gap-3 mt-6">
 
           <button
+            disabled={processing}
             onClick={onApprove}
             className="primary-btn flex-1">
-            Aprobar
+             {
+        processing
+            ?
+            "Cargando..."
+            :
+            "Aprobar"
+    }
           </button>
 
           <button
-            onClick={onReject}
-            className="secondary-btn flex-1">
-            Rechazar
-          </button>
+
+ disabled={processing}
+
+ onClick={onReject}
+
+ className="secondary-btn flex-1 disabled:opacity-50"
+
+>
+Rechazar
+</button>
 
         </div>
       }

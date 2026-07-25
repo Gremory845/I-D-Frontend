@@ -1,159 +1,213 @@
+import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import AppointmentCard from "../components/AppointmentCard";
 import AppointmentModal from "../components/AppointmentModal";
-import { useState } from "react";
-
+import Loader from "../components/Loader";
+import { getAppointments, updateAppointmentStatus } from "../services/appointmentService";
+import VisitCalendar from "../components/Calendar";
+import { useAuth } from "../context/AuthContext";
 
 function StaffDashboard() {
+  const { user } = useAuth();
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [reason, setReason] = useState("");
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [processing, setProcessing] = useState(null);
 
-  const [appointments, setAppointments] = useState([
+  const filteredAppointments =
+    selectedDate
+      ?
+      appointments.filter(
+        item =>
+          item.date ===
+          selectedDate
+            .toISOString()
+            .split("T")[0]
+      )
+      :
+      appointments;
 
-    {
-      id: 1,
-      visitor: "Juan Pérez",
-      resident: "María López",
-      date: "20 Julio 2026",
-      time: "10:00 AM",
-      status: "pending"
-    },
+      const canApprove =
+    user?.permissions?.includes(
+        "approve appointment"
+    );
 
-    {
-      id: 2,
-      visitor: "Pedro Díaz",
-      resident: "Carlos Mora",
-      date: "21 Julio 2026",
-      time: "2:00 PM",
-      status: "pending"
+  useEffect(() => {
+    async function loadAppointments() {
+      setLoading(true);
+      setError(null);
+      console.log("USUARIO LOGIN:", user);
+
+      try {
+        const data = await getAppointments();
+        setAppointments(data.map(formatAppointment));
+
+      } catch (requestError) {
+        setError(
+          requestError.response?.data?.message ||
+          requestError.message ||
+          "No se pudo cargar la lista de citas."
+        );
+      } finally {
+        setLoading(false);
+      }
     }
 
-  ]);
+    loadAppointments();
+  }, []);
 
-  const [showModal, setShowModal] = useState(false);
+  function formatAppointment(appointment) {
+    return {
+      id: appointment.id,
+      visitor: appointment.visitor_name || "Sin visitante",
+      resident: appointment.resident_name || "Sin residente",
+      date: appointment.visit_date,
+      time: formatTime(appointment.start_time, appointment.end_time),
+      status: appointment.status,
+      rejection_notes: appointment.rejection_notes,
+    };
+  }
 
-const [reason, setReason] = useState("");
+  function formatTime(start, end) {
+    const normalize = (value) => {
+      if (!value) return "--";
+      return value.length >= 5 ? value.slice(0, 5) : value;
+    };
 
-const [selectedAppointment, setSelectedAppointment] = useState(null);
+    return `${normalize(start)} - ${normalize(end)}`;
+  }
+
+async function approve(id) {
+
+  setError(null);
+  setProcessing(id);
+
+  try {
+
+    await updateAppointmentStatus(
+      id,
+      "approved"
+    );
 
 
-  function approve(id) {
-
-    setAppointments(prev =>
-      prev.map(item =>
-
+    setAppointments((prev) =>
+      prev.map((item) =>
         item.id === id
-          ?
-          {
-            ...item,
-            status: "approved"
-          }
-          :
-          item
+          ? {
+              ...item,
+              status: "approved"
+            }
+          : item
       )
+    );
 
-    )
+
+  } catch (requestError) {
+
+    setError(
+      requestError.response?.data?.message ||
+      requestError.message ||
+      "No se pudo aprobar la cita."
+    );
+
+
+  } finally {
+
+    setProcessing(null);
 
   }
-
-  function openRejectModal(id){
-
-  setSelectedAppointment(id);
-
-  setShowModal(true);
-
-  }
-
-  function reject(){
-
-  setAppointments(prev =>
-    prev.map(item =>
-
-      item.id === selectedAppointment
-
-      ?
-      {
-        ...item,
-        status:"rejected",
- rejection_notes: reason
-      }
-
-      :
-      item
-
-    )
-  );
-
-
-  setShowModal(false);
-
-  setReason("");
 
 }
 
+  function openRejectModal(id) {
+    setSelectedAppointment(id);
+    setShowModal(true);
+  }
+
+  async function reject() {
+    if (!selectedAppointment) return;
+
+    setError(null);
+
+    try {
+      await updateAppointmentStatus(selectedAppointment, "rejected", reason);
+      setAppointments((prev) =>
+        prev.map((item) =>
+          item.id === selectedAppointment
+            ? { ...item, status: "rejected", rejection_notes: reason }
+            : item
+        )
+      );
+      setShowModal(false);
+      setReason("");
+      setSelectedAppointment(null);
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.message ||
+        requestError.message ||
+        "No se pudo rechazar la cita."
+      );
+    }
+  }
+
   return (
-
     <>
-
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-8 py-10">
-
         <div className="mb-10">
-
-
-          <h1 className="text-4xl font-bold">
-            Agenda de visitas
-          </h1>
-
-
-          <p className="mt-2">
-            Revisa y gestiona solicitudes pendientes
-          </p>
-
+          <h1 className="text-4xl font-bold">Agenda de visitas</h1>
+          <p className="mt-2">Revisa y gestiona solicitudes pendientes</p>
         </div>
+        <div className="mb-5">
+          <VisitCalendar 
+          date={selectedDate}
+          setDate={setSelectedDate}
+          appointments={appointments}/></div>
+        
+        {loading ? (
 
-        <div className="grid md:grid-cols-2 gap-6">
+          <div className="card p-8">
+            <Loader />
+          </div>
+        ) : error ? (
+          <div className="card p-8 text-red-500">{error}</div>
+        ) : appointments.length === 0 ? (
+          <div className="card p-8">
+            <p>No hay citas registradas aún.</p>
+          </div>
+        ) : (
 
-
-          {
-            appointments.map(item => (
-
+          <div className="grid md:grid-cols-2 gap-6">
+            {filteredAppointments.map((item) => (
               <AppointmentCard
-
                 key={item.id}
-
                 appointment={item}
-
-                canApprove={true}
-
+                canApprove={canApprove}
                 onApprove={() => approve(item.id)}
-
                 onReject={() => openRejectModal(item.id)}
-
+                processing={processing === item.id}
               />
-            ))
-          }
+            ))}
+          </div>
+        )}
 
-        </div>
       </main>
-       {
-        showModal && (
 
-          <AppointmentModal
-
-            close={() => setShowModal(false)}
-
-            reason={reason}
-
-            setReason={setReason}
-
-            submit={reject}
-
-          />
-
-        )
-      }
+      {showModal && (
+        <AppointmentModal
+          close={() => setShowModal(false)}
+          reason={reason}
+          setReason={setReason}
+          submit={reject}
+        />
+      )}
     </>
-  )
+  );
 }
 
 

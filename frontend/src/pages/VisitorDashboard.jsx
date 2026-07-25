@@ -1,58 +1,10 @@
 import Navbar from "../components/Navbar";
 import VisitCalendar from "../components/Calendar";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getResidentsNames } from "../services/residentService";
+import { getFreeSlots, getOccupiedDates, createAppointment } from "../services/appointmentService";
+import { useAuth } from "../context/AuthContext";
 
-// Datos simulados
-const FAKE_FIRST_NAMES = [
-  "María",
-  "José",
-  "Ana",
-  "Carlos",
-  "Rosa",
-  "Luis",
-  "Marta",
-  "Rafael",
-  "Carmen",
-  "Fernando",
-];
-
-const FAKE_LAST_NAMES = [
-  "Rodríguez",
-  "Jiménez",
-  "Mora",
-  "Vargas",
-  "Solano",
-  "Chacón",
-  "Araya",
-  "Quesada",
-  "Salas",
-  "Brenes",
-];
-
-const FAKE_RESIDENTS = FAKE_FIRST_NAMES.map((first_name, i) => ({
-  id: i + 1,
-  first_name,
-  last_name: FAKE_LAST_NAMES[i],
-  room_number: `${100 + i}`,
-  status: "active",
-}));
-
-const TIME_SLOTS = [
-  { start: "09:00", end: "09:30" },
-  { start: "09:30", end: "10:00" },
-  { start: "10:00", end: "10:30" },
-  { start: "10:30", end: "11:00" },
-  { start: "11:00", end: "11:30" },
-  { start: "11:30", end: "12:00" },
-  { start: "13:00", end: "13:30" },
-  { start: "13:30", end: "14:00" },
-  { start: "14:00", end: "14:30" },
-  { start: "14:30", end: "15:00" },
-  { start: "15:00", end: "15:30" },
-  { start: "15:30", end: "16:00" },
-  { start: "16:00", end: "16:30" },
-  { start: "16:30", end: "17:00" },
-];
 //para mantrener la zona horaria del país, se puede hacer igual con una biblioteca pero es lo mismo
 function formatLocalDate(date) {
   const y = date.getFullYear();
@@ -74,8 +26,6 @@ function getAvailableSlots(date) {
   const day = date.getDay();
 
   if (day === 0 || day === 6) return [];
-  //aquí filtramos las horas que ya hayan pasado, ejemplo si son las 3 pm que no deje elegir de las 3 pm hacía atrás
-  let slots = TIME_SLOTS;
 
   if (isToday(date)) {
     const now = new Date();
@@ -110,43 +60,127 @@ function getMissingFieldMessage(visitorName, residentId, selectedSlot) {
 }
 
 function VisitorDashboard() {
+  const { user } = useAuth();
   const [date, setDate] = useState(null);
-
   const [selectedSlot, setSelectedSlot] = useState("");
-
   const [visitorName, setVisitorName] = useState("");
-
   const [residentId, setResidentId] = useState("");
-
-  const timeSlots = date ? getAvailableSlots(date) : [];
-
   const [confirmation, setConfirmation] = useState(null);
-
   const [touched, setTouched] = useState(false); //evita que lanze mensaje de espacio vacio antes que el usuario llene algo
-
+  const [residents, setResidents] = useState([]);
+  const [occupiedDates, setOccupiedDates] = useState([]);
+  const [timeSlots, setTimeSlots] = useState([]);
+  const [loadingSlots, setLoadingSlots] = useState(false)
   const missingFieldMessage = getMissingFieldMessage(visitorName, residentId, selectedSlot);
-
   const canSubmit = !missingFieldMessage;
 
-  function submitAppointment() {
+  useEffect(() => {
+
+    async function loadData() {
+
+      try {
+        const residentsData = await getResidentsNames();
+        setResidents(residentsData);
+
+        const occupied = await getOccupiedDates();
+        setOccupiedDates(occupied);
+
+      } catch (error) {
+        console.error(error);
+      }
+
+    }
+
+
+    loadData();
+
+  }, []);
+
+  useEffect(() => {
+
+    async function loadSlots() {
+
+      if (!date) return;
+
+      try {
+
+        setLoadingSlots(true);
+
+        const formatted = formatLocalDate(date);
+        const slots = await getFreeSlots(formatted);
+        const formattedSlots = slots.map(slot => ({
+          value: `${slot.start_time}-${slot.end_time}`,
+          label: `${slot.start_time} - ${slot.end_time}`,
+          start: slot.start_time,
+          end: slot.end_time
+        }));
+
+        setTimeSlots(formattedSlots);
+
+      } catch (error) {
+
+        console.error(error);
+        setTimeSlots([]);
+
+      }
+      finally {
+        setLoadingSlots(false);
+      }
+
+    }
+
+    loadSlots();
+
+  }, [date]);
+
+  async function submitAppointment() {
+
     setTouched(true);
-    if (!canSubmit) return; // no continuar si falta algo
+
+    if (!canSubmit) return;
+
+    const [start_time, end_time] = selectedSlot.split("-");
+
     const appointment = {
-      visitor_name: visitorName,
-      resident_id: Number (residentId), //Modificación para futura conexión con back, mejor castear el dato antes de enviarlo para evitar bugs
-      visit_date: formatLocalDate(date), //se usa la función antes creada
-      time_slot: selectedSlot,
-    };
 
-    console.log(appointment);
+  user_id:user.id,
 
-    setConfirmation("Visita reservada correctamente.");
+  visitor_name:visitorName,
 
-    //Reseta el formulario luego de reservar la cita
-    setVisitorName("");
-    setResidentId("");
-    setSelectedSlot("");
-    setDate(null);
+  resident_id:Number(residentId),
+
+  visit_date:formatLocalDate(date),
+
+  start_time,
+
+  end_time
+
+};
+
+    try {
+
+      await createAppointment(appointment);
+
+      setConfirmation(
+        "Visita reservada correctamente."
+      );
+
+
+      setVisitorName("");
+      setResidentId("");
+      setSelectedSlot("");
+      setDate(null);
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      setConfirmation(
+        "Error al reservar la visita."
+      );
+
+    }
 
   }
 
@@ -168,6 +202,7 @@ function VisitorDashboard() {
           <VisitCalendar
             date={date}
             setDate={setDate}
+            occupiedDates={occupiedDates}
           />
 
           {/* Horario */}
@@ -180,6 +215,12 @@ function VisitorDashboard() {
               </h3>
 
               <div className="flex flex-wrap gap-3">
+
+                {loadingSlots && (
+                  <p key="loading">
+                    Buscando horarios disponibles...
+                  </p>
+                )}
 
                 {timeSlots.map((slot) => (
                   <button
@@ -225,7 +266,7 @@ function VisitorDashboard() {
                   Seleccione un residente
                 </option>
 
-                {FAKE_RESIDENTS.map((resident) => (
+                {residents.map((resident) => (
                   <option
                     key={resident.id}
                     value={resident.id}
@@ -236,11 +277,11 @@ function VisitorDashboard() {
                 ))}
               </select>
 
-                {touched && missingFieldMessage && (
-                  <p className="mt-4 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-400">
-                    {missingFieldMessage} 
-                  </p>
-                )}
+              {touched && missingFieldMessage && (
+                <p className="mt-4 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-400">
+                  {missingFieldMessage}
+                </p>
+              )}
 
               <button
                 onClick={submitAppointment}
@@ -249,13 +290,13 @@ function VisitorDashboard() {
                 Reservar visita
               </button>
 
-            </div>  
+            </div>
           )}
-          
+
           {confirmation && (
-          <div className="mt-4 p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400">
-            {confirmation}
-          </div>
+            <div className="mt-4 p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400">
+              {confirmation}
+            </div>
           )}
 
         </div>

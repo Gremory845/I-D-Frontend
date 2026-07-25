@@ -40,6 +40,7 @@ function StaffDashboard() {
     async function loadAppointments() {
       setLoading(true);
       setError(null);
+      console.log("USUARIO LOGIN:", user);
 
       try {
         const data = await getAppointments();

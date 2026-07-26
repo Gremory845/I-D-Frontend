@@ -7,6 +7,13 @@ import { getAppointments, updateAppointmentStatus } from "../services/appointmen
 import VisitCalendar from "../components/Calendar";
 import { useAuth } from "../context/AuthContext";
 
+function formatLocalDate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 function StaffDashboard() {
   const { user } = useAuth();
   const [appointments, setAppointments] = useState([]);
@@ -22,11 +29,8 @@ function StaffDashboard() {
     selectedDate
       ?
       appointments.filter(
-        item =>
-          item.date ===
-          selectedDate
-            .toISOString()
-            .split("T")[0]
+         item =>
+          item.date === formatLocalDate(selectedDate)
       )
       :
       appointments;

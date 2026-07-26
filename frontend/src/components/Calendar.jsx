@@ -1,6 +1,17 @@
 import Calendar from "react-calendar";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
+function formatLocalDate(date) {
+
+  const y = date.getFullYear();
+
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+
+  const d = String(date.getDate()).padStart(2, "0");
+
+  return `${y}-${m}-${d}`;
+
+}
 
 function VisitCalendar({ date, setDate, appointments = [] }) {
 
@@ -24,9 +35,7 @@ function VisitCalendar({ date, setDate, appointments = [] }) {
 
   function getAppointmentsByDate(date){
 
-    const formatted =
-      date.toISOString().split("T")[0];
-
+    const formatted = formatLocalDate(date);
 
     const pending =
       appointments.filter(
@@ -35,7 +44,6 @@ function VisitCalendar({ date, setDate, appointments = [] }) {
           item.status === "pending"
       ).length;
 
-
     const approved =
       appointments.filter(
         item =>
@@ -43,10 +51,17 @@ function VisitCalendar({ date, setDate, appointments = [] }) {
           item.status === "approved"
       ).length;
 
+      const rejected =
+      appointments.filter(
+        item =>
+          item.date === formatted &&
+          item.status === "rejected"
+      ).length;
 
     return {
       pending,
-      approved
+      approved,
+      rejected
     };
 
   }
@@ -71,7 +86,8 @@ function VisitCalendar({ date, setDate, appointments = [] }) {
 
         const {
           pending,
-          approved
+          approved,
+          rejected
         } = getAppointmentsByDate(date);
 
 
@@ -115,8 +131,6 @@ function VisitCalendar({ date, setDate, appointments = [] }) {
               )
             }
 
-
-
             {
               approved > 0 && (
 
@@ -140,11 +154,36 @@ function VisitCalendar({ date, setDate, appointments = [] }) {
                   {approved}
 
                 </span>
-
+              
               )
             }
 
+            {
+              rejected > 0 && (
 
+                <span
+
+                  className="
+                  w-5
+                  h-5
+                  rounded-full
+                  flex
+                  items-center
+                  justify-center
+                  text-xs
+                  font-bold
+                  bg-red-500
+                  text-black
+                  "
+
+                >
+
+                  {rejected}
+
+                </span>
+
+              )
+            }
 
           </div>
 

@@ -17,11 +17,9 @@ export async function updateAppointmentStatus(appointmentId, status, rejection_n
 }
 
 //Visitor
-export async function getFreeSlots(date) {
+export async function getFreeSlots(date, residentId) {
     const response = await api.get("/api/appointments/free", {
-        params: {
-            date
-        }
+        params: { date, resident_id: residentId },
     });
 
     return response.data?.data || response.data;

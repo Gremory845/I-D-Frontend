@@ -16,6 +16,7 @@ function getRoleFromUser(rawUser) {
 
   const email = (rawUser.email || "").toLowerCase();
   if (email === "admin@example.com") return "admin";
+  if (email === "admin@casaaurora.com") return "admin";
   if (email === "maria@example.com") return "staff";
   return "visitor";
 }

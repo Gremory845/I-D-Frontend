@@ -35,7 +35,7 @@ function filterPastSlotsIfToday(slots, date) {
   });
 }
 
-function getMissingFieldMessage(visitorName, residentId, selectedSlot) {
+function getMissingFieldMessage(visitorName, residentId, selectedSlot, notes) {
   if (!residentId) {
     return "Selecciona un residente para continuar";
   }
@@ -44,6 +44,9 @@ function getMissingFieldMessage(visitorName, residentId, selectedSlot) {
   }
   if (!visitorName.trim()) {
     return "Ingresa el nombre del visitante para continuar";
+  }
+  if (!notes.trim()) {
+    return "Ingresa la razón o detalles de la visita para continuar";
   }
   return null;
 }
@@ -55,6 +58,7 @@ function VisitorDashboard() {
   const [residentId, setResidentId] = useState("");
   const [selectedSlot, setSelectedSlot] = useState("");
   const [visitorName, setVisitorName] = useState("");
+  const [notes, setNotes] = useState("");
 
   const [confirmation, setConfirmation] = useState(null);
   const [submitError, setSubmitError] = useState(null);
@@ -69,7 +73,7 @@ function VisitorDashboard() {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [slotsError, setSlotsError] = useState(null);
 
-  const missingFieldMessage = getMissingFieldMessage(visitorName, residentId, selectedSlot);
+  const missingFieldMessage = getMissingFieldMessage(visitorName, residentId, selectedSlot, notes);
   const canSubmit = !missingFieldMessage;
 
   // Cargar residentes una sola vez al montar
@@ -139,6 +143,7 @@ function VisitorDashboard() {
       visit_date: formatLocalDate(date),
       start_time,
       end_time,
+      notes,
     };
 
     setSubmitting(true);
@@ -149,6 +154,7 @@ function VisitorDashboard() {
       setConfirmation("Visita reservada correctamente.");
 
       setVisitorName("");
+      setNotes("");
       setResidentId("");
       setSelectedSlot("");
       setDate(null);
@@ -213,6 +219,10 @@ function VisitorDashboard() {
               <h3 className="font-bold text-xl mb-4">
                 Horarios disponibles
               </h3>
+                  <p className="text-xs text-yellow-400/80 mb-4">
+      ⚠ Cada horario permite hasta 3 visitas. Si seleccionas un bloque,
+      tu cita quedará sujeta a aprobación según el cupo disponible.
+    </p>
 
               <div className="flex flex-wrap gap-3">
                 {loadingSlots && <Loader />}
@@ -254,6 +264,17 @@ function VisitorDashboard() {
                 value={visitorName}
                 onChange={(e) => setVisitorName(e.target.value)}
                 className="w-full p-4 rounded-xl border border-[var(--border)] bg-[var(--bg)]"
+              />
+
+              <label htmlFor="notes" className="block text-md mt-4">
+                Razón de la visita / Detalles
+              </label>
+              <textarea
+                id="notes"
+                placeholder="Describe la razón de la visita y cualquier detalle adicional"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="w-full p-4 rounded-xl border border-[var(--border)] bg-[var(--bg)] min-h-[140px]"
               />
 
               {touched && missingFieldMessage && (

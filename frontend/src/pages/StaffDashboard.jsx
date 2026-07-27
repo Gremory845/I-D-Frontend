@@ -72,6 +72,7 @@ function StaffDashboard() {
       date: appointment.visit_date,
       time: formatTime(appointment.start_time, appointment.end_time),
       status: appointment.status,
+      notes: appointment.notes,
       rejection_notes: appointment.rejection_notes,
     };
   }
